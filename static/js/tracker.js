@@ -13,6 +13,8 @@
         currentSearch: '',
         currentSort: 'updated_desc',
         viewMode: 'matrix', // 'matrix' or 'cards'
+        currentPage: 1,
+        pageSize: 7,
         activePopover: null,
         editingShowId: null,
         deletingShowId: null,
@@ -38,6 +40,7 @@
         btnViewCards: document.getElementById('btn-view-cards'),
         themeToggle: document.getElementById('theme-toggle'),
         toastContainer: document.getElementById('toast-container'),
+        paginationContainer: document.getElementById('pagination-container'),
 
         // Stats
         statTotalShows: document.getElementById('stat-total-shows'),
@@ -488,29 +491,170 @@
         return list;
     }
 
+    // Helper: Detect Mobile Viewport
+    function isMobileViewport() {
+        return window.innerWidth <= 768;
+    }
+
     // Render Master Method
     function renderApp() {
         if (!elements.matrixViewContainer || !elements.cardsViewContainer) return;
-        const filteredShows = getFilteredShows();
 
-        if (filteredShows.length === 0) {
+        // Force cards view on mobile screens
+        if (isMobileViewport()) {
+            AppState.viewMode = 'cards';
+        }
+
+        const filteredShows = getFilteredShows();
+        const totalShows = filteredShows.length;
+
+        if (totalShows === 0) {
             elements.matrixViewContainer.style.display = 'none';
             elements.cardsViewContainer.style.display = 'none';
+            if (elements.paginationContainer) {
+                elements.paginationContainer.style.display = 'none';
+                elements.paginationContainer.innerHTML = '';
+            }
             if (elements.emptyState) elements.emptyState.style.display = 'block';
             return;
         }
 
         if (elements.emptyState) elements.emptyState.style.display = 'none';
 
-        if (AppState.viewMode === 'matrix') {
+        // Calculate pagination bounds
+        const totalPages = Math.max(1, Math.ceil(totalShows / AppState.pageSize));
+        if (AppState.currentPage > totalPages) {
+            AppState.currentPage = totalPages;
+        }
+        if (AppState.currentPage < 1) {
+            AppState.currentPage = 1;
+        }
+
+        const startIndex = (AppState.currentPage - 1) * AppState.pageSize;
+        const endIndex = Math.min(startIndex + AppState.pageSize, totalShows);
+        const pagedShows = filteredShows.slice(startIndex, endIndex);
+
+        if (!isMobileViewport() && AppState.viewMode === 'matrix') {
             elements.matrixViewContainer.style.display = 'block';
             elements.cardsViewContainer.style.display = 'none';
-            renderMatrixView(filteredShows);
+            renderMatrixView(pagedShows, filteredShows);
         } else {
             elements.matrixViewContainer.style.display = 'none';
             elements.cardsViewContainer.style.display = 'grid';
-            renderCardsView(filteredShows);
+            renderCardsView(pagedShows);
         }
+
+        renderPagination(totalShows, AppState.currentPage, AppState.pageSize, totalPages);
+    }
+
+    // Pagination helper: Smart page numbers array
+    function getPaginationNumbers(currentPage, totalPages) {
+        if (totalPages <= 7) {
+            return Array.from({ length: totalPages }, (_, i) => i + 1);
+        }
+        const pages = [];
+        if (currentPage <= 4) {
+            for (let i = 1; i <= 5; i++) pages.push(i);
+            pages.push('...');
+            pages.push(totalPages);
+        } else if (currentPage >= totalPages - 3) {
+            pages.push(1);
+            pages.push('...');
+            for (let i = totalPages - 4; i <= totalPages; i++) pages.push(i);
+        } else {
+            pages.push(1);
+            pages.push('...');
+            pages.push(currentPage - 1);
+            pages.push(currentPage);
+            pages.push(currentPage + 1);
+            pages.push('...');
+            pages.push(totalPages);
+        }
+        return pages;
+    }
+
+    // Render Pagination Controls
+    function renderPagination(totalItems, currentPage, pageSize, totalPages) {
+        if (!elements.paginationContainer) return;
+        if (totalItems <= pageSize && totalPages <= 1) {
+            elements.paginationContainer.style.display = 'none';
+            elements.paginationContainer.innerHTML = '';
+            return;
+        }
+
+        elements.paginationContainer.style.display = 'flex';
+
+        const startItem = (currentPage - 1) * pageSize + 1;
+        const endItem = Math.min(currentPage * pageSize, totalItems);
+
+        let pagesHtml = '';
+
+        // Previous Button
+        const prevDisabled = currentPage <= 1 ? 'disabled aria-disabled="true"' : '';
+        pagesHtml += `
+            <button type="button" class="pagination-btn pagination-nav-btn pagination-prev-btn" data-page="${currentPage - 1}" ${prevDisabled} aria-label="Previous page">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+                <span>Prev</span>
+            </button>
+        `;
+
+        // Page Numbers with Smart Truncation
+        const pageNumbers = getPaginationNumbers(currentPage, totalPages);
+        pagesHtml += '<div class="pagination-pages-group" role="navigation" aria-label="Page navigation">';
+        pageNumbers.forEach(p => {
+            if (p === '...') {
+                pagesHtml += `<span class="pagination-ellipsis" aria-hidden="true">&hellip;</span>`;
+            } else {
+                const isActive = p === currentPage;
+                pagesHtml += `
+                    <button type="button" class="pagination-btn pagination-num-btn ${isActive ? 'active' : ''}" data-page="${p}" ${isActive ? 'aria-current="page"' : ''}>
+                        ${p}
+                    </button>
+                `;
+            }
+        });
+        pagesHtml += '</div>';
+
+        // Next Button
+        const nextDisabled = currentPage >= totalPages ? 'disabled aria-disabled="true"' : '';
+        pagesHtml += `
+            <button type="button" class="pagination-btn pagination-nav-btn pagination-next-btn" data-page="${currentPage + 1}" ${nextDisabled} aria-label="Next page">
+                <span>Next</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </button>
+        `;
+
+        elements.paginationContainer.innerHTML = `
+            <div class="pagination-summary font-mono">
+                Showing <span class="pagination-highlight">${startItem}&ndash;${endItem}</span> of <span class="pagination-highlight">${totalItems}</span> shows
+            </div>
+            <div class="pagination-controls">
+                ${pagesHtml}
+            </div>
+        `;
+
+        // Bind click events on pagination buttons
+        elements.paginationContainer.querySelectorAll('button[data-page]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (btn.disabled || btn.getAttribute('aria-disabled') === 'true') return;
+                const targetPage = parseInt(btn.getAttribute('data-page'), 10);
+                if (!isNaN(targetPage) && targetPage >= 1 && targetPage <= totalPages && targetPage !== AppState.currentPage) {
+                    AppState.currentPage = targetPage;
+                    closeSeasonPopover();
+                    renderApp();
+                    // Smooth scroll to top of content container
+                    const mainEl = document.getElementById('tracker-app');
+                    if (mainEl) {
+                        const topOffset = mainEl.getBoundingClientRect().top + window.pageYOffset - 75;
+                        window.scrollTo({ top: Math.max(0, topOffset), behavior: 'smooth' });
+                    }
+                }
+            });
+        });
     }
 
     // Calculate Max Seasons for Table Header
@@ -524,8 +668,8 @@
     }
 
     // Render Tabular Matrix View
-    function renderMatrixView(showsList) {
-        const maxSeasons = getMaxSeasons(showsList);
+    function renderMatrixView(showsList, allFilteredShows) {
+        const maxSeasons = getMaxSeasons(allFilteredShows || showsList);
 
         // Render Season Headers
         elements.seasonHeadersWrap.setAttribute('colspan', maxSeasons);
@@ -1395,6 +1539,7 @@
                     if (idx !== -1) AppState.shows[idx] = data.show;
                 } else {
                     AppState.shows.unshift(data.show);
+                    AppState.currentPage = 1;
                 }
                 updateStatsUI(data.stats);
                 renderApp();
@@ -1634,6 +1779,7 @@
                     tab.classList.add('active');
                     tab.setAttribute('aria-selected', 'true');
                     AppState.currentFilter = tab.dataset.status;
+                    AppState.currentPage = 1;
                     closeSeasonPopover();
                     renderApp();
                 });
@@ -1649,6 +1795,7 @@
                 if (elements.searchClearBtn) elements.searchClearBtn.style.display = val ? 'flex' : 'none';
                 searchDebounceTimer = setTimeout(() => {
                     AppState.currentSearch = val;
+                    AppState.currentPage = 1;
                     closeSeasonPopover();
                     renderApp();
                 }, 100);
@@ -1662,6 +1809,7 @@
                 if (elements.searchInput) elements.searchInput.value = '';
                 elements.searchClearBtn.style.display = 'none';
                 AppState.currentSearch = '';
+                AppState.currentPage = 1;
                 closeSeasonPopover();
                 renderApp();
                 if (elements.searchInput) elements.searchInput.focus();
@@ -1672,6 +1820,7 @@
         if (elements.sortSelect) {
             elements.sortSelect.addEventListener('change', (e) => {
                 AppState.currentSort = e.target.value;
+                AppState.currentPage = 1;
                 closeSeasonPopover();
                 renderApp();
             });
@@ -1913,6 +2062,20 @@
                 Loading.setButtonLoading(googleLoginBtn, true, 'Connecting to Google...');
             });
         }
+
+        // Window Resize Listener with Debounce (for mobile card view locking)
+        let resizeDebounceTimer = null;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeDebounceTimer);
+            resizeDebounceTimer = setTimeout(() => {
+                if (isMobileViewport()) {
+                    if (AppState.viewMode !== 'cards') {
+                        AppState.viewMode = 'cards';
+                        renderApp();
+                    }
+                }
+            }, 150);
+        });
 
         // Keyboard Shortcuts
         document.addEventListener('keydown', (e) => {
