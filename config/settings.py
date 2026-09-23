@@ -163,6 +163,7 @@ STATICFILES_DIRS = [
 ]
 
 # Use WhiteNoise for efficient compressed and cache-busted static asset serving
+WHITENOISE_USE_FINDERS = True
 STORAGES = {
     "default": {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
