@@ -25,13 +25,17 @@ load_dotenv(BASE_DIR / '.env')
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-$my6zc%0)4l$c_t@n&bw#&h^ae9oulcaitnr#x6r5a9(&**p#_')
 
+IS_VERCEL = os.getenv('VERCEL') is not None or os.getenv('VERCEL_ENV') is not None
+
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 't', 'yes')
+DEBUG = os.getenv('DEBUG', 'False' if IS_VERCEL else 'True').lower() in ('true', '1', 't', 'yes')
+if IS_VERCEL and 'DEBUG' not in os.environ:
+    DEBUG = False
 
 ALLOWED_HOSTS = [h.strip() for h in os.getenv('ALLOWED_HOSTS', '*').split(',') if h.strip()]
 
-
 TESTING = 'test' in sys.argv or 'test_coverage' in sys.argv
+ENABLE_DEBUG_TOOLBAR = DEBUG and not IS_VERCEL and not TESTING
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -43,7 +47,7 @@ INSTALLED_APPS = [
     'tracker',
 ]
 
-if DEBUG and not TESTING:
+if ENABLE_DEBUG_TOOLBAR:
     INSTALLED_APPS.insert(0, 'debug_toolbar')
 
 MIDDLEWARE = [
@@ -58,7 +62,7 @@ MIDDLEWARE = [
     'tracker.middleware.ExceptionLoggingMiddleware',
 ]
 
-if DEBUG and not TESTING:
+if ENABLE_DEBUG_TOOLBAR:
     MIDDLEWARE.insert(0, 'debug_toolbar.middleware.DebugToolbarMiddleware')
 
 INTERNAL_IPS = [
@@ -68,7 +72,7 @@ INTERNAL_IPS = [
 
 DEBUG_TOOLBAR_CONFIG = {
     'SHOW_COLLAPSED': True,
-    'SHOW_TOOLBAR_CALLBACK': lambda request: DEBUG and not bool(request.headers.get('x-requested-with') == 'XMLHttpRequest'),
+    'SHOW_TOOLBAR_CALLBACK': lambda request: ENABLE_DEBUG_TOOLBAR and (request.META.get('REMOTE_ADDR') in INTERNAL_IPS),
 }
 
 ROOT_URLCONF = 'config.urls'

@@ -23,7 +23,7 @@ urlpatterns = [
     path('', include('tracker.urls', namespace='tracker')),
 ]
 
-if settings.DEBUG:
+if getattr(settings, 'ENABLE_DEBUG_TOOLBAR', False):
     import debug_toolbar
     urlpatterns = [
         path('__debug__/', include(debug_toolbar.urls)),
