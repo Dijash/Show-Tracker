@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monthly TV Series Digest // SHOW TRACKER</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #0c0d0e;
+            color: #ededed;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            -webkit-text-size-adjust: 100%;
+        }
+        table {
+            border-collapse: collapse;
+            mso-table-lspace: 0pt;
+            mso-table-rspace: 0pt;
+        }
+        .email-wrapper {
+            width: 100%;
+            background-color: #0c0d0e;
+            padding: 24px 12px;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #151618;
+            border: 1px solid #282a2d;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .header {
+            padding: 24px;
+            background-color: #1b1d20;
+            border-bottom: 1px solid #282a2d;
+        }
+        .brand-badge {
+            display: inline-block;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            color: #9ba1a6;
+            background-color: #24272b;
+            border: 1px solid #383c42;
+            padding: 3px 8px;
+            border-radius: 3px;
+            margin-bottom: 8px;
+        }
+        .title {
+            font-size: 20px;
+            font-weight: 800;
+            color: #ffffff;
+            margin: 0 0 6px 0;
+            letter-spacing: -0.02em;
+        }
+        .subtitle {
+            font-size: 13px;
+            color: #9ba1a6;
+            margin: 0;
+        }
+        .content {
+            padding: 24px;
+        }
+        .stats-table {
+            width: 100%;
+            margin-bottom: 24px;
+            background-color: #1b1d20;
+            border: 1px solid #282a2d;
+            border-radius: 6px;
+        }
+        .stat-cell {
+            padding: 14px 10px;
+            text-align: center;
+            border-right: 1px solid #282a2d;
+        }
+        .stat-cell:last-child {
+            border-right: none;
+        }
+        .stat-value {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 18px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 2px;
+        }
+        .stat-label {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #9ba1a6;
+        }
+        .section-heading {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #9ba1a6;
+            margin: 20px 0 12px 0;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #282a2d;
+        }
+        .show-card {
+            background-color: #1b1d20;
+            border: 1px solid #282a2d;
+            border-radius: 6px;
+            padding: 14px;
+            margin-bottom: 10px;
+        }
+        .show-title-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 6px;
+        }
+        .show-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #ffffff;
+            margin: 0;
+        }
+        .show-badge {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 11px;
+            font-weight: 600;
+            color: #9ba1a6;
+            background-color: #24272b;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #383c42;
+        }
+        .progress-bar-bg {
+            width: 100%;
+            height: 6px;
+            background-color: #282a2d;
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 8px 0 6px 0;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background-color: #ffffff;
+            border-radius: 3px;
+        }
+        .show-meta {
+            font-size: 12px;
+            color: #9ba1a6;
+            display: flex;
+            justify-content: space-between;
+        }
+        .footer {
+            padding: 20px 24px;
+            background-color: #111214;
+            border-top: 1px solid #282a2d;
+            font-size: 11px;
+            color: #636a71;
+            text-align: center;
+            line-height: 1.6;
+        }
+        .footer a {
+            color: #9ba1a6;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-wrapper">
+        <div class="email-container">
+            <!-- Header -->
+            <div class="header">
+                <div class="brand-badge">SHOW TRACKER // DIGEST</div>
+                <h1 class="title">Monthly Series Summary</h1>
+                <p class="subtitle">Hello @{{ username }}, here is your television tracking overview for {{ month_name }}.</p>
+            </div>
+
+            <!-- Content Body -->
+            <div class="content">
+                <!-- Metrics Table -->
+                <table class="stats-table">
+                    <tr>
+                        <td class="stat-cell">
+                            <div class="stat-value">{{ total_shows }}</div>
+                            <div class="stat-label">Total Shows</div>
+                        </td>
+                        <td class="stat-cell">
+                            <div class="stat-value">{{ watching_count }}</div>
+                            <div class="stat-label">Watching</div>
+                        </td>
+                        <td class="stat-cell">
+                            <div class="stat-value">{{ completed_count }}</div>
+                            <div class="stat-label">Completed</div>
+                        </td>
+                        <td class="stat-cell">
+                            <div class="stat-value">{{ total_episodes_watched }}</div>
+                            <div class="stat-label">Episodes</div>
+                        </td>
+                        <td class="stat-cell">
+                            <div class="stat-value">{{ overall_completion_pct }}%</div>
+                            <div class="stat-label">Progress</div>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- Currently Watching -->
+                {% if watching_shows %}
+                <div class="section-heading">Currently Watching ({{ watching_count }})</div>
+                {% for show in watching_shows %}
+                <div class="show-card">
+                    <table style="width:100%;">
+                        <tr>
+                            <td>
+                                <div class="show-title">{{ show.title }}</div>
+                                {% if show.platform %}
+                                <div style="font-size: 11px; color: #9ba1a6; margin-top: 2px;">{{ show.platform }}{% if show.rating %} &bull; Rating: {{ show.rating }}/10{% endif %}</div>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: right; vertical-align: top;">
+                                <span class="show-badge">
+                                    {% if show.current_season_info %}
+                                    S{{ show.current_season_info.season_number|stringformat:"02d" }}E{{ show.current_season_info.next_episode|stringformat:"02d" }} Next
+                                    {% else %}
+                                    {{ show.episodes_watched }}/{{ show.total_episodes }} Eps
+                                    {% endif %}
+                                </span>
+                            </td>
+                        </tr>
+                    </table>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" style="width: {{ show.progress_pct }}%;"></div>
+                    </div>
+                    <div class="show-meta">
+                        <span>Progress: {{ show.episodes_watched }}/{{ show.total_episodes }} episodes</span>
+                        <span>{{ show.progress_pct }}%</span>
+                    </div>
+                </div>
+                {% endfor %}
+                {% endif %}
+
+                <!-- Recently Completed -->
+                {% if completed_shows %}
+                <div class="section-heading">Completed Shows</div>
+                {% for show in completed_shows %}
+                <div class="show-card" style="padding: 10px 14px;">
+                    <table style="width:100%;">
+                        <tr>
+                            <td>
+                                <div style="font-weight: 700; color: #ffffff;">{{ show.title }}</div>
+                                <div style="font-size: 11px; color: #9ba1a6;">{{ show.total_seasons }} Season{{ show.total_seasons|pluralize }} &bull; {{ show.total_episodes }} Episodes</div>
+                            </td>
+                            <td style="text-align: right;">
+                                <span class="show-badge" style="background-color: #1a2e1e; border-color: #234c2b; color: #4ade80;">DONE</span>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                {% endfor %}
+                {% endif %}
+
+                <!-- Watchlist / Plan to Watch -->
+                {% if plan_to_watch_shows %}
+                <div class="section-heading">Watchlist Queue ({{ plan_to_watch_count }})</div>
+                {% for show in plan_to_watch_shows %}
+                <div class="show-card" style="padding: 10px 14px;">
+                    <table style="width:100%;">
+                        <tr>
+                            <td>
+                                <div style="font-weight: 700; color: #ffffff;">{{ show.title }}</div>
+                                {% if show.genres %}<div style="font-size: 11px; color: #9ba1a6;">{{ show.genres }}</div>{% endif %}
+                            </td>
+                            <td style="text-align: right;">
+                                <span class="show-badge">Plan to Watch</span>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                {% endfor %}
+                {% endif %}
+            </div>
+
+            <!-- Footer -->
+            <div class="footer">
+                <p style="margin: 0 0 6px 0;">This automated monthly digest was generated for @{{ username }} by Show Tracker.</p>
+                <p style="margin: 0;">Keep your watchlist and episode progress updated regularly.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,482 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}SHOW TRACKER // Series Matrix & Episode Progress{% endblock %}
+
+{% block content %}
+<div class="tracker-dashboard" id="tracker-app">
+
+    <!-- Top Analytics Stats Bar -->
+    <section class="stats-grid" aria-label="Tracking Metrics">
+        <div class="stat-card">
+            <div class="stat-header">
+                <span class="stat-label">TOTAL SHOWS</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <rect width="20" height="15" x="2" y="7" rx="2" ry="2"></rect>
+                    <polyline points="17 2 12 7 7 2"></polyline>
+                </svg>
+            </div>
+            <div class="stat-value font-mono" id="stat-total-shows">{{ stats.total_shows }}</div>
+            <div class="stat-sub">
+                <span id="stat-watching-count">{{ stats.watching_count }}</span> active &bull; <span id="stat-completed-count">{{ stats.completed_count }}</span> completed
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-header">
+                <span class="stat-label">EPISODES WATCHED</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <polyline points="9 11 12 14 22 4"></polyline>
+                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                </svg>
+            </div>
+            <div class="stat-value font-mono">
+                <span id="stat-episodes-watched">{{ stats.episodes_watched }}</span>
+                <span class="stat-divider">/</span>
+                <span id="stat-total-episodes" class="stat-denom">{{ stats.total_episodes }}</span>
+            </div>
+            <div class="stat-sub">Across all tracked seasons</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-header">
+                <span class="stat-label">COMPLETION RATE</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="m4.93 4.93 4.24 4.24"></path>
+                    <path d="m14.83 9.17 4.24-4.24"></path>
+                    <path d="m14.83 14.83 4.24 4.24"></path>
+                    <path d="m9.17 14.83-4.24 4.24"></path>
+                    <circle cx="12" cy="12" r="4"></circle>
+                </svg>
+            </div>
+            <div class="stat-value font-mono" id="stat-completion-pct">{{ stats.completion_pct }}%</div>
+            <div class="stat-sub progress-micro-wrap">
+                <div class="progress-track">
+                    <div class="progress-fill" id="stat-progress-bar" style="width: {{ stats.completion_pct }}%;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-header">
+                <span class="stat-label">ESTIMATED TIME</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+            </div>
+            <div class="stat-value font-mono">
+                <span id="stat-hours">{{ stats.estimated_hours }}</span><span class="stat-unit">h</span>
+            </div>
+            <div class="stat-sub">~45 mins avg per episode</div>
+        </div>
+    </section>
+
+    <!-- Toolbar: Search, Filters, View Modes & Quick Actions -->
+    <section class="toolbar-section">
+        <!-- Status Filter Tabs -->
+        <div class="filter-tabs" role="tablist" aria-label="Filter by Show Status">
+            <button type="button" class="tab-btn active" data-status="ALL" role="tab" aria-selected="true">
+                <span>All</span>
+                <span class="tab-count font-mono" id="count-all">{{ stats.total_shows }}</span>
+            </button>
+            <button type="button" class="tab-btn" data-status="WATCHING" role="tab" aria-selected="false">
+                <span>Watching</span>
+                <span class="tab-count font-mono" id="count-watching">{{ stats.watching_count }}</span>
+            </button>
+            <button type="button" class="tab-btn" data-status="PLAN_TO_WATCH" role="tab" aria-selected="false">
+                <span>Plan to Watch</span>
+                <span class="tab-count font-mono" id="count-plan">{{ stats.plan_to_watch_count }}</span>
+            </button>
+            <button type="button" class="tab-btn" data-status="COMPLETED" role="tab" aria-selected="false">
+                <span>Completed</span>
+                <span class="tab-count font-mono" id="count-completed">{{ stats.completed_count }}</span>
+            </button>
+            <button type="button" class="tab-btn" data-status="ON_HOLD" role="tab" aria-selected="false">
+                <span>On Hold</span>
+                <span class="tab-count font-mono" id="count-hold">{{ stats.on_hold_count }}</span>
+            </button>
+            <button type="button" class="tab-btn" data-status="DROPPED" role="tab" aria-selected="false">
+                <span>Dropped</span>
+                <span class="tab-count font-mono" id="count-dropped">{{ stats.dropped_count }}</span>
+            </button>
+        </div>
+
+        <!-- Search & Control Row -->
+        <div class="toolbar-controls">
+            <!-- Search Bar -->
+            <div class="search-input-group">
+                <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="search" id="search-input" class="search-input" placeholder="Search shows, platforms, genres..." aria-label="Search shows">
+                <kbd class="search-kbd" title="Press / to focus">/</kbd>
+                <button type="button" id="search-clear-btn" class="search-clear-btn" style="display:none;" aria-label="Clear search">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+
+            <!-- Sort By Select -->
+            <div class="select-group">
+                <label for="sort-select" class="sr-only">Sort shows</label>
+                <div class="custom-select-wrapper">
+                    <select id="sort-select" class="custom-select" aria-label="Sort shows by">
+                        <option value="updated_desc">Recently Updated</option>
+                        <option value="title_asc">Title (A &rarr; Z)</option>
+                        <option value="progress_desc">Progress (Highest)</option>
+                        <option value="progress_asc">Progress (Lowest)</option>
+                        <option value="rating_desc">Rating (Highest)</option>
+                        <option value="seasons_desc">Seasons (Most)</option>
+                    </select>
+                    <svg class="select-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- View Switcher -->
+            <div class="view-mode-switch" role="group" aria-label="View Mode">
+                <button type="button" class="view-btn active" id="btn-view-matrix" title="Tabular Matrix View" aria-pressed="true">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <rect width="18" height="18" x="3" y="3" rx="2"></rect>
+                        <path d="M3 9h18"></path>
+                        <path d="M3 15h18"></path>
+                        <path d="M9 3v18"></path>
+                        <path d="M15 3v18"></path>
+                    </svg>
+                    <span>Matrix</span>
+                </button>
+                <button type="button" class="view-btn" id="btn-view-cards" title="Grid Cards View" aria-pressed="false">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <rect width="7" height="7" x="3" y="3" rx="1"></rect>
+                        <rect width="7" height="7" x="14" y="3" rx="1"></rect>
+                        <rect width="7" height="7" x="14" y="14" rx="1"></rect>
+                        <rect width="7" height="7" x="3" y="14" rx="1"></rect>
+                    </svg>
+                    <span>Cards</span>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content Area: Matrix Table vs Cards -->
+    <section class="content-display-area">
+        
+        <!-- Matrix Tabular View -->
+        <div id="matrix-view-container" class="matrix-table-container">
+            <div class="table-scroll-wrapper" tabindex="0" aria-label="Shows Season Matrix Table">
+                <table class="matrix-table" id="matrix-table">
+                    <thead>
+                        <tr>
+                            <th class="col-sticky col-show">SHOW &amp; OVERVIEW</th>
+                            <th class="col-rating">RATING</th>
+                            <th class="col-status">STATUS</th>
+                            <th class="col-progress">PROGRESS</th>
+                            <!-- Dynamic Season Columns -->
+                            <th class="col-season-header-group" id="season-headers-wrap" colspan="{{ max_seasons }}">
+                                <div class="season-headers-row" id="season-headers-list">
+                                    <!-- Rendered dynamically by JS / Django -->
+                                    {% for s_num in season_columns %}
+                                        <span class="season-th-cell font-mono">S{{ s_num }}</span>
+                                    {% endfor %}
+                                </div>
+                            </th>
+                            <th class="col-actions">ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="matrix-table-body">
+                        <!-- Dynamic Rows injected by Javascript or Server Render fallback -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Card Grid View -->
+        <div id="cards-view-container" class="cards-grid" style="display:none;">
+            <!-- Rendered by JS -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="empty-state" class="empty-state-box" style="display:none;">
+            <div class="empty-state-icon">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect width="20" height="15" x="2" y="7" rx="2" ry="2"></rect>
+                    <polyline points="17 2 12 7 7 2"></polyline>
+                </svg>
+            </div>
+            <h3 class="empty-title">No Shows Found</h3>
+            <p class="empty-desc">Your tracker has no shows matching this filter. Add your first TV series to begin tracking seasons and episodes.</p>
+            <div class="empty-actions">
+                <button type="button" class="btn btn-primary" id="btn-empty-add">+ Add New Show</button>
+            </div>
+        </div>
+
+    </section>
+
+</div>
+
+<!-- Popover Template Container (Managed dynamically in JS) -->
+<div id="season-popover" class="season-popover" role="dialog" aria-modal="false" style="display:none;">
+    <div class="popover-arrow"></div>
+    <div class="popover-inner">
+        <div class="popover-header">
+            <div class="popover-header-info">
+                <h4 class="popover-title" id="popover-season-title">Season 1</h4>
+                <div class="popover-subtitle" id="popover-season-sub">0 of 10 episodes watched (0%)</div>
+                <div class="popover-header-progress">
+                    <div class="popover-progress-track">
+                        <div class="popover-progress-fill" id="popover-progress-fill" style="width: 0%;"></div>
+                    </div>
+                </div>
+            </div>
+            <button type="button" class="popover-close-btn" id="popover-close-btn" aria-label="Close episode selector">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </div>
+
+        <!-- Quick Action Stepper -->
+        <div class="popover-quick-row">
+            <button type="button" class="popover-quick-btn" id="popover-btn-step-down" title="Decrement 1 Episode">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                <span>-1 Ep</span>
+            </button>
+            <button type="button" class="popover-quick-btn" id="popover-btn-step-up" title="Increment 1 Episode">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                <span>+1 Ep</span>
+            </button>
+            <button type="button" class="popover-quick-btn" id="popover-btn-toggle-all">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span id="popover-toggle-text">Complete Season</span>
+            </button>
+        </div>
+
+        <!-- Interactive Episode Selector Grid -->
+        <div class="popover-episodes-header">
+            <span class="popover-episodes-label">Episodes</span>
+            <button type="button" class="popover-reset-link font-mono" id="popover-btn-reset-zero" title="Reset watched to 0">Reset to 0</button>
+        </div>
+        <div class="popover-episodes-grid" id="popover-episodes-grid">
+            <!-- Episode chips generated via JS: 1, 2, ... N -->
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- ADD / EDIT SHOW MODAL                                                     -->
+<!-- ========================================================================= -->
+<div id="show-form-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="form-modal-title" style="display:none;">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title" id="form-modal-title">Add New Show</h3>
+                    <p class="modal-subtitle">Track seasons, episode counts, and status.</p>
+                </div>
+                <button type="button" class="modal-close-btn" id="btn-close-form-modal" aria-label="Close dialog">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+
+            <form id="show-form" novalidate>
+                <input type="hidden" id="form-show-id" value="">
+
+                <div class="modal-body">
+                    <!-- Row 1: Title & Release Year with IMDb/TV Autocomplete -->
+                    <div class="form-row form-grid-2">
+                        <div class="form-group" style="position: relative;">
+                            <div class="form-label-row">
+                                <label for="form-title" class="form-label">Show Title <span class="required-star">*</span></label>
+                                <span class="auto-fill-hint font-mono" title="Type to search and auto-fill metadata">Auto-complete</span>
+                            </div>
+                            <div class="autocomplete-wrapper">
+                                <input type="text" id="form-title" class="form-input" placeholder="e.g. Breaking Bad, Severance..." autocomplete="off" required>
+                                <div id="autocomplete-spinner" class="autocomplete-spinner" style="display:none;" aria-hidden="true"></div>
+                                <!-- Floating Live Suggestions Dropdown -->
+                                <div id="title-autocomplete-dropdown" class="autocomplete-dropdown" style="display:none;" role="listbox" aria-label="Show Suggestions">
+                                    <!-- Populated dynamically by JS -->
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="form-year" class="form-label">Release Year</label>
+                            <input type="number" id="form-year" class="form-input font-mono" placeholder="e.g. 2022" min="1900" max="2099">
+                        </div>
+                    </div>
+
+                    <!-- Row 2: Poster URL & Platform with Live Preview -->
+                    <div class="form-row form-grid-2">
+                        <div class="form-group">
+                            <label for="form-poster" class="form-label">Poster / Banner Image URL</label>
+                            <div class="poster-input-group">
+                                <input type="url" id="form-poster" class="form-input" placeholder="https://image-url.jpg">
+                                <div class="poster-mini-preview" id="form-poster-preview" style="display:none;">
+                                    <img id="form-poster-img" src="" alt="Preview" class="poster-mini-img" onerror="this.parentElement.style.display='none';">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="form-platform" class="form-label">Platform / Network</label>
+                            <input type="text" id="form-platform" class="form-input" placeholder="e.g. Apple TV+, HBO Max" list="platform-suggestions">
+                            <datalist id="platform-suggestions">
+                                <option value="Apple TV+"></option>
+                                <option value="HBO Max"></option>
+                                <option value="Netflix"></option>
+                                <option value="FX / Hulu"></option>
+                                <option value="Amazon Prime"></option>
+                                <option value="Disney+"></option>
+                                <option value="Crunchyroll"></option>
+                                <option value="Paramount+"></option>
+                                <option value="Peacock"></option>
+                            </datalist>
+                        </div>
+                    </div>
+
+                    <!-- Row 3: Status & Rating -->
+                    <div class="form-row form-grid-2">
+                        <div class="form-group">
+                            <label for="form-status" class="form-label">Watch Status</label>
+                            <select id="form-status" class="form-input">
+                                <option value="WATCHING">Watching</option>
+                                <option value="PLAN_TO_WATCH">Plan to Watch</option>
+                                <option value="COMPLETED">Completed</option>
+                                <option value="ON_HOLD">On Hold</option>
+                                <option value="DROPPED">Dropped</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="form-rating" class="form-label">Rating (0 - 10)</label>
+                            <input type="number" id="form-rating" class="form-input font-mono" placeholder="9.5" step="0.1" min="0" max="10">
+                        </div>
+                    </div>
+
+                    <!-- Row 4: Genres -->
+                    <div class="form-group">
+                        <label for="form-genres" class="form-label">Genres</label>
+                        <input type="text" id="form-genres" class="form-input" placeholder="e.g. Sci-Fi, Thriller, Drama">
+                    </div>
+
+                    <!-- Dynamic Season Breakdown Section -->
+                    <div class="form-seasons-builder">
+                        <div class="builder-header">
+                            <div>
+                                <label class="form-label" style="margin-bottom:2px;">Seasons &amp; Episode Counts</label>
+                                <span class="builder-hint">Customize episode totals per season</span>
+                            </div>
+                            <div class="builder-controls">
+                                <button type="button" class="btn btn-secondary btn-sm" id="btn-add-season-row">+ Add Season</button>
+                            </div>
+                        </div>
+
+                        <div id="seasons-rows-container" class="seasons-rows-container">
+                            <!-- Dynamic season rows: Season 1: [Episodes input] [Watched input] -->
+                        </div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="form-group">
+                        <label for="form-notes" class="form-label">Notes &amp; Thoughts</label>
+                        <textarea id="form-notes" class="form-input form-textarea" rows="2" placeholder="Personal notes, season impressions, or reminders..."></textarea>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="btn-cancel-form">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btn-save-show">Save Show</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- SHOW DETAIL DRAWER / MODAL                                                -->
+<!-- ========================================================================= -->
+<div id="show-detail-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="detail-modal-title" style="display:none;">
+    <div class="modal-dialog modal-dialog-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title" id="detail-modal-title">Show Overview</h3>
+                    <div class="detail-sub-meta" id="detail-sub-meta"></div>
+                </div>
+                <button type="button" class="modal-close-btn" id="btn-close-detail-modal" aria-label="Close dialog">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+
+            <div class="modal-body detail-modal-body">
+                <div class="detail-layout">
+                    <div class="detail-poster-col">
+                        <div class="detail-poster-wrap" id="detail-poster-box">
+                            <!-- Poster img or fallback -->
+                        </div>
+                        <div class="detail-quick-stat-list">
+                            <div class="detail-quick-stat">
+                                <span class="d-label">Rating</span>
+                                <span class="d-val font-mono" id="detail-rating">★ 9.0</span>
+                            </div>
+                            <div class="detail-quick-stat">
+                                <span class="d-label">Progress</span>
+                                <span class="d-val font-mono" id="detail-progress">100%</span>
+                            </div>
+                            <div class="detail-quick-stat">
+                                <span class="d-label">Status</span>
+                                <span class="d-val" id="detail-status">Watching</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="detail-content-col">
+                        <div class="detail-genres" id="detail-genres"></div>
+                        <div class="detail-synopsis-box">
+                            <h4 class="detail-section-title">Notes / Synopsis</h4>
+                            <p class="detail-notes-text" id="detail-notes">No notes recorded for this show.</p>
+                        </div>
+
+                        <div class="detail-seasons-section">
+                            <h4 class="detail-section-title">Season Breakdown</h4>
+                            <div class="detail-seasons-list" id="detail-seasons-list">
+                                <!-- Season list with progress bars -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="btn-detail-edit">Edit Show</button>
+                <button type="button" class="btn btn-primary" id="btn-detail-close">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- DELETE CONFIRMATION MODAL                                                 -->
+<!-- ========================================================================= -->
+<div id="delete-confirm-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="delete-modal-title" style="display:none;">
+    <div class="modal-dialog modal-dialog-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="delete-modal-title">Delete Show</h3>
+                <button type="button" class="modal-close-btn" id="btn-close-delete-modal" aria-label="Close dialog">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="delete-warning-text">Are you sure you want to remove <strong id="delete-show-title" class="delete-target-name"></strong> from your tracker? All logged season and episode progress will be deleted.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="btn-cancel-delete">Cancel</button>
+                <button type="button" class="btn btn-destructive" id="btn-confirm-delete">Delete Show</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Initial Server Data Payload -->
+<script id="initial-shows-data" type="application/json">{{ shows_json|safe }}</script>
+{% endblock %}

@@ -1,0 +1,52 @@
+================================================================================
+SHOW TRACKER // MONTHLY TV PROGRESS DIGEST - {{ month_name|upper }}
+================================================================================
+
+Hello @{{ username }},
+
+Here is your television series tracking summary for {{ month_name }}.
+
+--------------------------------------------------------------------------------
+OVERVIEW STATISTICS
+--------------------------------------------------------------------------------
+- Total Shows Tracked:      {{ total_shows }}
+- Shows Currently Watching:  {{ watching_count }}
+- Shows Completed:           {{ completed_count }}
+- Shows on Watchlist:        {{ plan_to_watch_count }}
+- Episodes Watched:          {{ total_episodes_watched }} / {{ total_episodes_available }} ({{ overall_completion_pct }}%)
+
+{% if watching_shows %}
+--------------------------------------------------------------------------------
+CURRENTLY WATCHING ({{ watching_count }})
+--------------------------------------------------------------------------------
+{% for show in watching_shows %}
+* {{ show.title }}
+  Progress: {{ show.episodes_watched }}/{{ show.total_episodes }} episodes ({{ show.progress_pct }}%)
+  {% if show.current_season_info %}Next Up: Season {{ show.current_season_info.season_number }}, Episode {{ show.current_season_info.next_episode }}{% endif %}
+  {% if show.platform %}Platform: {{ show.platform }}{% endif %}
+
+{% endfor %}
+{% endif %}
+
+{% if completed_shows %}
+--------------------------------------------------------------------------------
+RECENTLY COMPLETED ({{ completed_count }})
+--------------------------------------------------------------------------------
+{% for show in completed_shows %}
+* {{ show.title }} ({{ show.total_seasons }} Season{{ show.total_seasons|pluralize }}, {{ show.total_episodes }} Episodes)
+{% endfor %}
+{% endif %}
+
+{% if plan_to_watch_shows %}
+--------------------------------------------------------------------------------
+WATCHLIST QUEUE ({{ plan_to_watch_count }})
+--------------------------------------------------------------------------------
+{% for show in plan_to_watch_shows %}
+* {{ show.title }}{% if show.genres %} [{{ show.genres }}]{% endif %}
+{% endfor %}
+{% endif %}
+
+================================================================================
+This automated monthly digest was generated for @{{ username }} by Show Tracker.
+Visit Show Tracker to manage and log your episode progress.
+================================================================================
